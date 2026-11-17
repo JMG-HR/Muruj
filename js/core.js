@@ -76,25 +76,34 @@ function trNodes(s){const d=new DOMParser().parseFromString('<body>'+san(s),'tex
  return{html:d.innerHTML.replace(/text-align:\s*(left|right|start|end)\s*;?/gi,''),done}}
 function trx(s,h){s=String(s??'');if(L=='ar'||!AR.test(s))return h?rich(s):esc(s);if(h){const r=trNodes(s);if(r.done)return r.html;const k=trK(s,1);TO[k]=[s,1];return `<div class=trp data-trh="${k}">${r.html}</div>`}const c=trGet(s,0);if(c!==undefined)return esc(c);const k=trQ(s,0);return `<span class=trp data-tr="${k}">${esc(s)}</span>`}
 const trs=s=>{s=String(s??'');if(L=='ar'||!AR.test(s))return s;const c=trGet(s,0);if(c!==undefined)return c;trQ(s,0);return s};
-function vEmb(v){const u=String(v.v);if(v.t=='f')return `<iframe loading="lazy" src="https://drive.google.com/file/d/${esc(u)}/preview" allowfullscreen></iframe><i class=vcv></i>`;if(!/^https?:/.test(u))return'';let m;
- if(m=u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/))return `<div class=yt data-yt="${m[1]}"><img class=ytp src="https://i.ytimg.com/vi/${m[1]}/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${m[1]}/hqdefault.jpg'" alt=""><button type=button class=ytplay aria-label="play">▶</button></div>`;
- if(m=u.match(/vimeo\.com\/(\d+)/))return `<iframe loading="lazy" src="https://player.vimeo.com/video/${m[1]}?title=0&byline=0&portrait=0&badge=0&dnt=1" allowfullscreen></iframe>`;
- if(m=u.match(/drive\.google\.com\/file\/d\/([\w-]+)/))return `<iframe loading="lazy" src="https://drive.google.com/file/d/${m[1]}/preview" allowfullscreen></iframe><i class=vcv></i>`;
- return `<video src="${esc(u)}" controls controlsList="nodownload" playsinline></video>`}
-/* ===== مشغّل يوتيوب نضيف: الفيديو بس بأزرار تحكم بتاعتنا، من غير عنوان ولا لوجو ولا اقتراحات ===== */
-let YTPR;const ytAPI=()=>YTPR||(YTPR=new Promise(ok=>{if(window.YT&&YT.Player)return ok();const x=document.createElement('script');x.src='https://www.youtube.com/iframe_api';window.onYouTubeIframeAPIReady=ok;document.head.append(x)})),YTL=[],ytf=n=>{n=Math.max(0,Math.floor(n||0));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')};
-document.addEventListener('click',e=>{const y=e.target.closest('.yt');if(y&&!y.dataset.on)ytStart(y)});
-async function ytStart(b){b.dataset.on=1;b.classList.add('wait');await ytAPI();const m=document.createElement('div');b.prepend(m);let pl,tm=0,rg,tt,pp,mu;
- const stop=()=>{b.classList.remove('pl');pl.pauseVideo();pl.seekTo(0,true);pp.textContent='▶';rg.value=0},
- tick=()=>{if(!b.isConnected){clearInterval(tm);try{pl.destroy()}catch(x){}return}const d=pl.getDuration?pl.getDuration():0,c=pl.getCurrentTime?pl.getCurrentTime():0;if(!d)return;rg.value=c/d*1000;tt.textContent=ytf(c)+' / '+ytf(d);if(pl.getPlayerState()==1&&d-c<.7)stop()};
- b.insertAdjacentHTML('beforeend',`<div class=ytsh></div><div class=ytc><button type=button class=ytb data-a=pp>❚❚</button><input class=yts type=range min=0 max=1000 value=0 aria-label="seek"><span class=ytt dir=ltr>0:00</span><button type=button class=ytb data-a=mu>🔊</button>${b.requestFullscreen||b.webkitRequestFullscreen?'<button type=button class=ytb data-a=fs>⛶</button>':''}</div>`);
- rg=b.querySelector('.yts');tt=b.querySelector('.ytt');pp=b.querySelector('[data-a=pp]');mu=b.querySelector('[data-a=mu]');
- const tg=()=>{const s=pl.getPlayerState();if(s==1){pl.pauseVideo()}else{YTL.forEach(o=>{if(o!==pl)try{o.pauseVideo()}catch(x){}});pl.playVideo()}};
- b.querySelector('.ytsh').onclick=tg;pp.onclick=tg;mu.onclick=()=>{if(pl.isMuted()){pl.unMute();mu.textContent='🔊'}else{pl.mute();mu.textContent='🔇'}};
- const fs=b.querySelector('[data-a=fs]');if(fs)fs.onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else(b.requestFullscreen||b.webkitRequestFullscreen).call(b)};
- rg.oninput=()=>{const d=pl.getDuration();if(d)pl.seekTo(rg.value/1000*d,true)};
- pl=new YT.Player(m,{videoId:b.dataset.yt,playerVars:{autoplay:1,controls:0,rel:0,modestbranding:1,iv_load_policy:3,playsinline:1,fs:0,disablekb:1,cc_load_policy:0,origin:location.origin},events:{onReady:e=>{YTL.forEach(o=>{if(o!==pl)try{o.pauseVideo()}catch(x){}});e.target.playVideo()},onStateChange:e=>{const st=e.data;if(st==1){b.classList.add('pl');b.classList.remove('wait');pp.textContent='❚❚'}else if(st==2){pp.textContent='▶'}else if(st==0)stop()}}});
- YTL.push(pl);tm=setInterval(tick,250)}
+function vEmb(v){const u=String(v.v),pb=(k,x,po)=>`<div class=yt data-k="${k}" ${x}>${po||''}<button type=button class=ytplay aria-label="play">▶</button></div>`,dp=id=>pb('dr',`data-id="${esc(id)}"`,`<img class=ytp src="https://drive.google.com/thumbnail?id=${esc(id)}&sz=w1000" onerror="this.remove()" alt="">`);
+ if(v.t=='f')return dp(u);if(!/^https?:/.test(u))return'';let m;
+ if(m=u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/))return pb('yt',`data-id="${m[1]}"`,`<img class=ytp src="https://i.ytimg.com/vi/${m[1]}/maxresdefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${m[1]}/hqdefault.jpg'" alt="">`);
+ if(m=u.match(/vimeo\.com\/(\d+)/))return pb('vm',`data-id="${m[1]}"`);
+ if(m=u.match(/drive\.google\.com\/file\/d\/([\w-]+)/))return dp(m[1]);
+ return pb('mp',`data-src="${esc(u)}"`)}
+/* ===== مشغّل فيديو موحّد (يوتيوب / Vimeo / درايف / روابط مباشرة): الفيديو بس بأزرار تحكم بتاعتنا ===== */
+const vl=(u,cb)=>{const x=document.createElement('script');x.src=u;x.onload=cb;document.head.append(x)},VPL=[],vtf=n=>{n=Math.max(0,Math.floor(n||0));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')};
+let YTPR,VMPR;const ytAPI=()=>YTPR||(YTPR=new Promise(ok=>{if(window.YT&&YT.Player)return ok();window.onYouTubeIframeAPIReady=ok;vl('https://www.youtube.com/iframe_api')})),vmAPI=()=>VMPR||(VMPR=new Promise(ok=>{if(window.Vimeo)return ok();vl('https://player.vimeo.com/api/player.js',ok)}));
+document.addEventListener('click',e=>{const y=e.target.closest('.yt');if(y&&!y.dataset.on)vpStart(y)});
+async function mkYT(b,id){await ytAPI();const m=document.createElement('div');b.prepend(m);return new Promise(ok=>{const pl=new YT.Player(m,{videoId:id,playerVars:{autoplay:1,controls:0,rel:0,modestbranding:1,iv_load_policy:3,playsinline:1,fs:0,disablekb:1,cc_load_policy:0,origin:location.origin},events:{onReady:()=>{ok({playing:()=>pl.getPlayerState()==1,play:()=>pl.playVideo(),pause:()=>pl.pauseVideo(),time:()=>pl.getCurrentTime(),dur:()=>pl.getDuration(),seek:s=>pl.seekTo(s,true),muted:()=>pl.isMuted(),setMuted:x=>x?pl.mute():pl.unMute(),destroy:()=>pl.destroy()});pl.playVideo()}}})})}
+async function mkVM(b,id){await vmAPI();const f=document.createElement('iframe');f.allow='autoplay; fullscreen';f.src=`https://player.vimeo.com/video/${id}?autoplay=1&controls=0&title=0&byline=0&portrait=0&badge=0&dnt=1&playsinline=1`;b.prepend(f);const pl=new Vimeo.Player(f);let pg=0,t=0,d=0,mt=0;pl.on('play',()=>pg=1);pl.on('pause',()=>pg=0);pl.on('ended',()=>pg=0);pl.on('timeupdate',x=>{t=x.seconds;d=x.duration});
+ return{playing:()=>pg,play:()=>pl.play(),pause:()=>pl.pause(),time:()=>t,dur:()=>d,seek:s=>pl.setCurrentTime(s),muted:()=>mt,setMuted:x=>{mt=x;pl.setVolume(x?0:1)},destroy:()=>pl.destroy()}}
+function mkVid(b,src,dr){return new Promise((ok,no)=>{const v=document.createElement('video');v.playsInline=true;v.preload='auto';v.disablePictureInPicture=true;v.src=src;b.prepend(v);let dn=0;const to=setTimeout(()=>{if(!dn){v.remove();no()}},dr?10000:25000);
+ v.onloadedmetadata=()=>{dn=1;clearTimeout(to);ok({playing:()=>!v.paused&&!v.ended,play:()=>v.play(),pause:()=>v.pause(),time:()=>v.currentTime,dur:()=>v.duration||0,seek:s=>v.currentTime=s,muted:()=>v.muted,setMuted:x=>v.muted=x,destroy:()=>{v.pause();v.removeAttribute('src');v.load()}});v.play().catch(()=>{})};
+ v.onerror=()=>{if(!dn){clearTimeout(to);v.remove();no()}}})}
+// لو درايف مرضيش يشغّل الملف مباشرة (صيغة مش مدعومة مثلاً) بنرجع لمشغّل درايف مع تغطية شريطه العلوي
+function vpFall(b){const id=b.dataset.id;b.classList.remove('wait');b.classList.add('fb');b.innerHTML=b.dataset.k=='dr'?`<iframe src="https://drive.google.com/file/d/${encodeURIComponent(id)}/preview" allowfullscreen></iframe><i class=vcv></i>`:`<span class=mu style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">⚠</span>`}
+async function vpStart(b){b.dataset.on=1;b.classList.add('wait');const k=b.dataset.k,id=b.dataset.id;let P;
+ try{P=k=='yt'?await mkYT(b,id):k=='vm'?await mkVM(b,id):await mkVid(b,k=='dr'?'https://drive.usercontent.google.com/download?id='+encodeURIComponent(id)+'&export=download&confirm=t':b.dataset.src,k=='dr')}catch(e){return vpFall(b)}
+ VPL.forEach(x=>{try{x.pause()}catch(e){}});VPL.push(P);b.insertAdjacentHTML('beforeend',`<div class=ytsh></div><div class=ytc><button type=button class=ytb data-a=pp>▶</button><input class=yts type=range min=0 max=1000 value=0 aria-label="seek"><span class=ytt dir=ltr>0:00</span><button type=button class=ytb data-a=mu>🔊</button>${b.requestFullscreen||b.webkitRequestFullscreen?'<button type=button class=ytb data-a=fs>⛶</button>':''}</div>`);
+ const rg=b.querySelector('.yts'),tt=b.querySelector('.ytt'),pp=b.querySelector('[data-a=pp]'),mu=b.querySelector('[data-a=mu]'),fs=b.querySelector('[data-a=fs]');let drag=0;
+ const sync=()=>pp.textContent=P.playing()?'❚❚':'▶',tg=()=>{if(P.playing())P.pause();else{VPL.forEach(o=>{if(o!==P)try{o.pause()}catch(x){}});P.play()}},
+ stop=()=>{P.pause();P.seek(0);b.classList.remove('pl');rg.value=0;sync()};
+ b.querySelector('.ytsh').onclick=tg;pp.onclick=tg;mu.onclick=()=>{const m=!P.muted();P.setMuted(m);mu.textContent=m?'🔇':'🔊'};
+ if(fs)fs.onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else(b.requestFullscreen||b.webkitRequestFullscreen).call(b)};
+ rg.onpointerdown=()=>drag=1;rg.onpointerup=rg.onchange=()=>drag=0;rg.oninput=()=>{const d=P.dur();if(d)P.seek(rg.value/1000*d)};
+ const tm=setInterval(()=>{if(!b.isConnected){clearInterval(tm);try{P.destroy()}catch(x){}const i=VPL.indexOf(P);if(i>-1)VPL.splice(i,1);return}const d=P.dur(),c=P.time(),p=P.playing();if(p){b.classList.add('pl');b.classList.remove('wait')}sync();if(!d)return;if(!drag)rg.value=c/d*1000;tt.textContent=vtf(c)+' / '+vtf(d);if(p&&d-c<.7)stop()},250)}
 async function upFile(f,prog){const r=await api('upInit',{name:f.name,mime:f.type||'application/octet-stream'});if(!r.sid)throw new Error('init '+(r.err||'')+' '+(r.info||''));const CH=2097152,tot=f.size;let id;
  for(let s=0;s<tot;s+=CH){const b64=await new Promise((ok,no)=>{const x=new FileReader();x.onload=()=>ok(x.result.split(',')[1]);x.onerror=no;x.readAsDataURL(f.slice(s,Math.min(tot,s+CH)))});
   let res;for(let k=0;k<3&&!(res&&!res.err);k++)res=await api('upChunk',{sid:r.sid,start:s,total:tot,data:b64});
