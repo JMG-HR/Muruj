@@ -169,7 +169,7 @@ button.lgb:hover{background:var(--g);color:#000}
 .yt{position:absolute;inset:0;background:#000;overflow:hidden}.yt iframe{width:100%;height:100%;border:0;pointer-events:none;position:absolute;inset:0}
 .ytp{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .ytplay{position:absolute;inset:0;margin:auto;width:70px;height:70px;padding:0;border-radius:50%;font-size:1.7rem;background:#0a0a0acc;border-color:#ffffff55;color:#fff;display:flex;align-items:center;justify-content:center}.ytplay:hover{transform:scale(1.08)}
-.yt.wait .ytplay{animation:pulse 1s infinite}.yt.pl .ytplay{display:none}.yt.pl .ytp{display:none}
+.yt.wait .ytplay{animation:pulse 1s infinite}.yt.vplay .ytplay{display:none}.yt.vplay .ytp{display:none}
 .ytsh{position:absolute;inset:0;z-index:2;cursor:pointer}
 .ytc{position:absolute;inset-inline:0;bottom:0;z-index:3;display:flex;align-items:center;gap:.5rem;padding:1.4rem .7rem .5rem;background:linear-gradient(#0000,#000d)}
 .ytb{width:36px;height:36px;padding:0;margin:0;border-radius:50%;flex:none;background:#ffffff1a;border-color:#ffffff33;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.9rem}

@@ -99,11 +99,11 @@ async function vpStart(b){b.dataset.on=1;b.classList.add('wait');const k=b.datas
  VPL.forEach(x=>{try{x.pause()}catch(e){}});VPL.push(P);b.insertAdjacentHTML('beforeend',`<div class=ytsh></div><div class=ytc><button type=button class=ytb data-a=pp>▶</button><input class=yts type=range min=0 max=1000 value=0 aria-label="seek"><span class=ytt dir=ltr>0:00</span><button type=button class=ytb data-a=mu>🔊</button>${b.requestFullscreen||b.webkitRequestFullscreen?'<button type=button class=ytb data-a=fs>⛶</button>':''}</div>`);
  const rg=b.querySelector('.yts'),tt=b.querySelector('.ytt'),pp=b.querySelector('[data-a=pp]'),mu=b.querySelector('[data-a=mu]'),fs=b.querySelector('[data-a=fs]');let drag=0;
  const sync=()=>pp.textContent=P.playing()?'❚❚':'▶',tg=()=>{if(P.playing())P.pause();else{VPL.forEach(o=>{if(o!==P)try{o.pause()}catch(x){}});P.play()}},
- stop=()=>{P.pause();P.seek(0);b.classList.remove('pl');rg.value=0;sync()};
+ stop=()=>{P.pause();P.seek(0);b.classList.remove('vplay');rg.value=0;sync()};
  b.querySelector('.ytsh').onclick=tg;pp.onclick=tg;mu.onclick=()=>{const m=!P.muted();P.setMuted(m);mu.textContent=m?'🔇':'🔊'};
  if(fs)fs.onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else(b.requestFullscreen||b.webkitRequestFullscreen).call(b)};
  rg.onpointerdown=()=>drag=1;rg.onpointerup=rg.onchange=()=>drag=0;rg.oninput=()=>{const d=P.dur();if(d)P.seek(rg.value/1000*d)};
- const tm=setInterval(()=>{if(!b.isConnected){clearInterval(tm);try{P.destroy()}catch(x){}const i=VPL.indexOf(P);if(i>-1)VPL.splice(i,1);return}const d=P.dur(),c=P.time(),p=P.playing();if(p){b.classList.add('pl');b.classList.remove('wait')}sync();if(!d)return;if(!drag)rg.value=c/d*1000;tt.textContent=vtf(c)+' / '+vtf(d);if(p&&d-c<.7)stop()},250)}
+ const tm=setInterval(()=>{if(!b.isConnected){clearInterval(tm);try{P.destroy()}catch(x){}const i=VPL.indexOf(P);if(i>-1)VPL.splice(i,1);return}const d=P.dur(),c=P.time(),p=P.playing();if(p){b.classList.add('vplay');b.classList.remove('wait')}sync();if(!d)return;if(!drag)rg.value=c/d*1000;tt.textContent=vtf(c)+' / '+vtf(d);if(p&&d-c<.7)stop()},250)}
 async function upFile(f,prog){const r=await api('upInit',{name:f.name,mime:f.type||'application/octet-stream'});if(!r.sid)throw new Error('init '+(r.err||'')+' '+(r.info||''));const CH=2097152,tot=f.size;let id;
  for(let s=0;s<tot;s+=CH){const b64=await new Promise((ok,no)=>{const x=new FileReader();x.onload=()=>ok(x.result.split(',')[1]);x.onerror=no;x.readAsDataURL(f.slice(s,Math.min(tot,s+CH)))});
   let res;for(let k=0;k<3&&!(res&&!res.err);k++)res=await api('upChunk',{sid:r.sid,start:s,total:tot,data:b64});
