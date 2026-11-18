@@ -121,13 +121,15 @@ async function upGo(j){j.st='run';j.msg=t('upWait');j.done=0;upDraw();
  try{await j.run(j);j.done=j.total;j.st='ok';j.msg=t('upDone');upDraw();setTimeout(()=>upRm(j.id),4500);inv();if(!document.querySelector('.ov'))render()}
  catch(e){j.st='err';j.msg=t('err')+' '+(e&&e.message||'');upDraw()}}
 // طلب XHR عشان نعرف نسبة الرفع الفعلية
-function apiP(a,d,onp){return new Promise(res=>{const x=new XMLHttpRequest();x.open('POST',API);x.onload=()=>{try{res(JSON.parse(x.responseText))}catch(e){res({err:'net'})}};x.onerror=x.ontimeout=()=>res({err:'net'});if(x.upload&&onp)x.upload.onprogress=e=>{if(e.lengthComputable)onp(e.loaded/e.total)};x.send(JSON.stringify({a,t:S.t,...d}))})}
-async function tryP(a,d,onp,n=3){let r;for(let k=0;k<n&&!(r&&!r.err);k++){onp&&onp(0);r=await apiP(a,d,onp);if(r&&r.err=='auth'){out();break}}return r}
+let UPS=400000; // سرعة الرفع التقديرية بالبايت/ثانية (بتتظبط من الطلبات الفعلية)
+function apiP(a,d,onp,bytes){return new Promise(res=>{const t0=Date.now(),est=bytes?bytes/UPS:3;let tm;if(onp)tm=setInterval(()=>onp(.9*(1-Math.exp(-(Date.now()-t0)/1000/est))),300);
+ fetch(API,{method:'POST',body:JSON.stringify({a,t:S.t,...d})}).then(r=>r.json()).then(r=>{clearInterval(tm);if(bytes&&r&&!r.err)UPS=Math.max(60000,.5*UPS+.5*bytes/Math.max(.2,(Date.now()-t0)/1000));res(r)},()=>{clearInterval(tm);res({err:'net'})})})}
+async function tryP(a,d,onp,n=3,bytes){let r;for(let k=0;k<n&&!(r&&!r.err);k++){onp&&onp(0);r=await apiP(a,d,onp,bytes);if(r&&r.err=='auth'){out();break}}return r}
 const b64of=b=>new Promise((ok,no)=>{const x=new FileReader();x.onload=()=>ok(x.result.split(',')[1]);x.onerror=no;x.readAsDataURL(b)});
 // رفع ملف كبير على أجزاء 8MB (بدل 2MB) مع تجهيز الجزء الجاي أثناء رفع الحالي، وadd(bytes) بتبلّغ بالتقدم
-async function upFile2(f,add){const r=await api('upInit',{name:f.name,mime:f.type||'application/octet-stream'});if(!r.sid)throw new Error('init '+(r.err||'')+' '+(r.info||''));const CH=8388608,tot=f.size,pt=s=>f.slice(s,Math.min(tot,s+CH));let id,nx=b64of(pt(0));
+async function upFile2(f,add){const r=await api('upInit',{name:f.name,mime:f.type||'application/octet-stream'});if(!r.sid)throw new Error('init '+(r.err||'')+' '+(r.info||''));const CH=4194304,tot=f.size,pt=s=>f.slice(s,Math.min(tot,s+CH));let id,nx=b64of(pt(0));
  for(let s=0;s<tot;s+=CH){const b64=await nx,raw=pt(s).size;nx=s+CH<tot?b64of(pt(s+CH)):null;let last=0,res;
-  for(let k=0;k<3&&!(res&&!res.err);k++){if(last){add(-last);last=0}res=await apiP('upChunk',{sid:r.sid,start:s,total:tot,data:b64},fr=>{const v=raw*fr;add(v-last);last=v})}
+  for(let k=0;k<3&&!(res&&!res.err);k++){if(last){add(-last);last=0}res=await apiP('upChunk',{sid:r.sid,start:s,total:tot,data:b64},fr=>{const v=raw*fr;add(v-last);last=v},b64.length)}
   if(!res||res.err)throw new Error('chunk '+(res&&res.err)+' '+((res&&res.info)||''));add(raw-last);if(res.id)id=res.id}
  if(!id)throw new Error('no id');return id}
 const pgb=()=>`<div class=pb><i id=pgi></i></div>`,pg=p=>{const e=$('#pgi');if(e)e.style.width=Math.round(p*100)+'%'};
@@ -283,7 +285,7 @@ function devForm(id){const isP=id=='proj',d=(id&&getDev(id))||{name:isP?'مرو�
    const wI=NW.map((x,i)=>x.length+(NT[i]||'').length),wV=VF.map(f=>f.size),sum=wI.concat(wV).reduce((a,b)=>a+b,0);j.total=sum+Math.max(2048,sum*.05);
    j.done=wI.reduce((a,w,i)=>a+(c.pre[i]?w:0),0)+wV.reduce((a,w,i)=>a+(c.vid[i]?w:0),0);upDraw();
    if(NW.length){j.msg=t('upImgs');let ix=0;await Promise.all(Array.from({length:Math.min(3,NW.length)},async()=>{while(ix<NW.length){const i=ix++;if(c.pre[i])continue;let last=0;
-     const r=await tryP('upImg',{img:NW[i],thb:NT[i]},f=>{const v=wI[i]*f;j.done+=v-last;last=v;upDraw()});if(!r||r.err||!r.id)throw new Error('img '+((r&&r.err)||''));j.done+=wI[i]-last;c.pre[i]={id:r.id,tid:r.tid||''}}}))}
+     const r=await tryP('upImg',{img:NW[i],thb:NT[i]},f=>{const v=wI[i]*f;j.done+=v-last;last=v;upDraw()},3,wI[i]);if(!r||r.err||!r.id)throw new Error('img '+((r&&r.err)||''));j.done+=wI[i]-last;c.pre[i]={id:r.id,tid:r.tid||''}}}))}
    for(let i=0;i<VF.length;i++){if(c.vid[i])continue;j.msg=t('upVid')+(VF.length>1?` ${i+1}/${VF.length}`:'');c.vid[i]=await upFile2(VF[i],v=>{j.done+=v;upDraw()})}
    j.msg=t('upSave');const body={id,kind:isP?'project':undefined,name,info,keep:K,pre:c.pre,videos:VI.concat(c.vid.map(x=>({t:'f',v:x}))),vnew:c.vid};if(logo!==undefined)body.logo=logo;
    const r=await api('saveDev',body);if(r.err)throw new Error(r.err=='big'?t('big'):r.err)})}}
