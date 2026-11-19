@@ -1,0 +1,75 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:        # تشغيل يدوي من تبويب Actions
+  push:
+    branches: [main, master]
+
+env:
+  WEB_DIR: .         # فولدر الموقع في المستودع. لو الموقع في الجذر خليها: .
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Create Capacitor project
+        run: |
+          mkdir -p app/www
+          rsync -a --exclude app --exclude .git --exclude .github "./${WEB_DIR}/" app/www/
+          cd app
+          npm init -y
+          npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          cat > capacitor.config.json <<'JSON'
+          {
+            "appId": "com.jmg.muruj",
+            "appName": "JMG مروج",
+            "webDir": "www",
+            "backgroundColor": "#000000",
+            "server": { "androidScheme": "https" }
+          }
+          JSON
+          npx cap add android
+
+      - name: App icons
+        run: |
+          pip install pillow
+          cd app
+          python3 - <<'PY'
+          from PIL import Image
+          import os
+          src = Image.open('www/assets/icon-512.png').convert('RGBA')
+          for d, s in {'mdpi':48,'hdpi':72,'xhdpi':96,'xxhdpi':144,'xxxhdpi':192}.items():
+              p = f'android/app/src/main/res/mipmap-{d}'
+              for n in ('ic_launcher.png', 'ic_launcher_round.png'):
+                  src.resize((s, s), Image.LANCZOS).save(f'{p}/{n}')
+              fg = f'{p}/ic_launcher_foreground.png'
+              if os.path.exists(fg):
+                  c = int(s * 108 / 48)
+                  bg = Image.new('RGBA', (c, c), (0, 0, 0, 255))
+                  i = src.resize((int(c * 0.6),) * 2, Image.LANCZOS)
+                  bg.paste(i, ((c - i.width) // 2,) * 2, i)
+                  bg.save(fg)
+          PY
+          sed -i 's/#FFFFFF</#000000</' android/app/src/main/res/values/ic_launcher_background.xml
+
+      - name: Build debug APK
+        run: |
+          cd app/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: muruj-apk
+          path: app/android/app/build/outputs/apk/debug/app-debug.apk
