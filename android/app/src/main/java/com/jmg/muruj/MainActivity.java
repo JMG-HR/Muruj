@@ -6,6 +6,7 @@ import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Build;
@@ -215,6 +216,7 @@ public class MainActivity extends AppCompatActivity {
                 ((FrameLayout) getWindow().getDecorView()).addView(v, new FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
                 web.setVisibility(View.INVISIBLE);
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);   // الفيديو بملء الشاشة بيلف أفقي
                 WindowInsetsControllerCompat c = WindowCompat.getInsetsController(getWindow(), root);
                 c.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
                 c.hide(WindowInsetsCompat.Type.systemBars());
@@ -226,6 +228,7 @@ public class MainActivity extends AppCompatActivity {
                 ((FrameLayout) getWindow().getDecorView()).removeView(customView);
                 customView = null;
                 web.setVisibility(View.VISIBLE);
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 if (customCb != null) customCb.onCustomViewHidden();
                 WindowCompat.getInsetsController(getWindow(), root).show(WindowInsetsCompat.Type.systemBars());
             }
@@ -411,7 +414,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override protected void onPause() { super.onPause(); web.onPause(); }
-    @Override protected void onResume() { super.onResume(); web.onResume(); }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        web.onResume();
+        // كل ما التطبيق يرجع للواجهة نتأكد من آخر نسخة للموقع (تحديثات الموقع بتتطبق تلقائي)
+        web.evaluateJavascript("if(navigator.serviceWorker)navigator.serviceWorker.getRegistration().then(function(r){if(r)r.update()})", null);
+    }
 
     @Override
     protected void onDestroy() {
