@@ -71,10 +71,14 @@ jobs:
       - name: Build APK
         working-directory: android
         run: |
-          # بيعيد المحاولة تلقائياً لو Maven رجّع 429 (ضغط مؤقت)
+          # بيعيد المحاولة بس لو المشكلة في الشبكة/Maven (429 وما شابه). أي خطأ تاني بيوقف فوراً
+          set +e
           for i in 1 2 3; do
-            gradle --no-daemon assembleDebug -PversionCode=${{ github.run_number }} -PstartUrl="$START_URL" -PappName="$APP_NAME" && exit 0
-            echo "Attempt $i failed, retrying in 45s..."
+            gradle --no-daemon assembleDebug -PversionCode=${{ github.run_number }} -PstartUrl="$START_URL" -PappName="$APP_NAME" 2>&1 | tee build.log
+            code=${PIPESTATUS[0]}
+            [ "$code" -eq 0 ] && exit 0
+            grep -qE "status code 429|Could not GET|Read timed out|Connection reset|Could not resolve" build.log || exit "$code"
+            echo "Network problem, attempt $i failed. Retrying in 45s..."
             sleep 45
           done
           exit 1
