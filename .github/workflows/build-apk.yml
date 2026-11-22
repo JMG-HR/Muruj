@@ -70,7 +70,14 @@ jobs:
 
       - name: Build APK
         working-directory: android
-        run: gradle --no-daemon assembleDebug -PversionCode=${{ github.run_number }} -PstartUrl="$START_URL" -PappName="$APP_NAME"
+        run: |
+          # بيعيد المحاولة تلقائياً لو Maven رجّع 429 (ضغط مؤقت)
+          for i in 1 2 3; do
+            gradle --no-daemon assembleDebug -PversionCode=${{ github.run_number }} -PstartUrl="$START_URL" -PappName="$APP_NAME" && exit 0
+            echo "Attempt $i failed, retrying in 45s..."
+            sleep 45
+          done
+          exit 1
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
