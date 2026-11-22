@@ -1,12 +1,24 @@
 name: Build Android APK
 
 on:
-  workflow_dispatch:        # تشغيل يدوي من تبويب Actions
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: 'رابط الموقع (اتركه فاضي ليتسحب تلقائياً من الريبو)'
+        required: false
+        default: ''
+      app_name:
+        description: 'اسم التطبيق'
+        required: false
+        default: 'JMG | مروج'
   push:
-    branches: [main, master]
+    paths:
+      - 'android/**'
+      - '.github/workflows/build-apk.yml'
 
-env:
-  WEB_DIR: .         # فولدر الموقع في المستودع. لو الموقع في الجذر خليها: .
+permissions:
+  contents: read
+  pages: read
 
 jobs:
   build:
@@ -14,62 +26,55 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      # رابط الموقع بيتسحب لوحده: من إعدادات GitHub Pages (يشمل الدومين المخصص)، وإلا من اسم المستخدم والريبو
+      - name: Detect site URL
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_URL: ${{ github.event.inputs.site_url }}
+          INPUT_NAME: ${{ github.event.inputs.app_name }}
+        run: |
+          URL="$INPUT_URL"
+          if [ -z "$URL" ]; then
+            URL=$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq '.html_url' 2>/dev/null || true)
+          fi
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            OWNER=$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+            REPO="${GITHUB_REPOSITORY#*/}"
+            if [ "$(echo "$REPO" | tr '[:upper:]' '[:lower:]')" = "$OWNER.github.io" ]; then
+              URL="https://$OWNER.github.io/"
+            else
+              URL="https://$OWNER.github.io/$REPO/"
+            fi
+          fi
+          case "$URL" in */) ;; *) URL="$URL/" ;; esac
+          NAME="${INPUT_NAME:-JMG | مروج}"
+          echo "START_URL=$URL" >> "$GITHUB_ENV"
+          echo "APP_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "Site URL: $URL"
 
-      - uses: actions/setup-java@v4
+      - name: Java 21
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '21'
 
-      - name: Create Capacitor project
-        run: |
-          mkdir -p app/www
-          rsync -a --exclude app --exclude .git --exclude .github "./${WEB_DIR}/" app/www/
-          cd app
-          npm init -y
-          npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
-          cat > capacitor.config.json <<'JSON'
-          {
-            "appId": "com.jmg.muruj",
-            "appName": "JMG مروج",
-            "webDir": "www",
-            "backgroundColor": "#000000",
-            "server": { "androidScheme": "https" }
-          }
-          JSON
-          npx cap add android
-
-      - name: App icons
-        run: |
-          pip install pillow
-          cd app
-          python3 - <<'PY'
-          from PIL import Image
-          import os
-          src = Image.open('www/assets/icon-512.png').convert('RGBA')
-          for d, s in {'mdpi':48,'hdpi':72,'xhdpi':96,'xxhdpi':144,'xxxhdpi':192}.items():
-              p = f'android/app/src/main/res/mipmap-{d}'
-              for n in ('ic_launcher.png', 'ic_launcher_round.png'):
-                  src.resize((s, s), Image.LANCZOS).save(f'{p}/{n}')
-              fg = f'{p}/ic_launcher_foreground.png'
-              if os.path.exists(fg):
-                  c = int(s * 108 / 48)
-                  bg = Image.new('RGBA', (c, c), (0, 0, 0, 255))
-                  i = src.resize((int(c * 0.6),) * 2, Image.LANCZOS)
-                  bg.paste(i, ((c - i.width) // 2,) * 2, i)
-                  bg.save(fg)
-          PY
-          sed -i 's/#FFFFFF</#000000</' android/app/src/main/res/values/ic_launcher_background.xml
-
-      - name: Build debug APK
-        run: |
-          cd app/android
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - uses: actions/upload-artifact@v4
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
         with:
-          name: muruj-apk
-          path: app/android/app/build/outputs/apk/debug/app-debug.apk
+          packages: 'platforms;android-35 build-tools;35.0.0'
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build APK
+        working-directory: android
+        run: gradle --no-daemon assembleDebug -PversionCode=${{ github.run_number }} -PstartUrl="$START_URL" -PappName="$APP_NAME"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MURUJ-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
