@@ -3,6 +3,7 @@
     <string name="offline_title">مفيش اتصال بالإنترنت</string>
     <string name="offline_retry">إعادة المحاولة</string>
     <string name="no_blob_download">تعذّر التحميل</string>
+    <string name="exit_hint">اضغط رجوع مرة تانية للخروج</string>
     <string name="saved">اتحفظ الملف في التنزيلات</string>
     <string name="save_failed">فشل حفظ الملف</string>
 </resources>

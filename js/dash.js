@@ -6,4 +6,4 @@ async function pDash(){A.innerHTML=`<div class=pg><h2 class=rv>${t('dash')}</h2>
 let DASH;function csv(){const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"',r=DASH,f=d=>new Date(d).toLocaleString('en-GB');
  const R=[['Clients'],['Date','Name','Phone','Email','Need']].concat(r.cl.map(c=>[f(c.at),c.name,c.phone,c.email,c.note]),[[],['Links'],['Date','Employee','Developer','Type','Client','Phone','Label','Visits']],r.ls.map(l=>[f(l.at),l.by,l.dev,l.type,l.client,l.phone,l.label,l.visits]));
  const b=new Blob(['\uFEFF'+R.map(x=>x.map(q).join(',')).join('\n')],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='jmg-report.csv';a.click()}
-bootPage(pDash,'dash',true);
+bootPage(pDash,'dash','dash');

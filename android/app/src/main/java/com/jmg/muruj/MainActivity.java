@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private String host;
     private volatile String curUrl = "";
     private OutputStream dlOut;
+    private long lastBack = 0;
 
     // بيتحقن في صفحات موقعك بس: تحميل الملفات اللي بتتولد في الصفحة (ZIP/CSV/صور) + المشاركة
     private static final String HOOK = """
@@ -280,22 +281,48 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // زرار الرجوع: يقفل أي نافذة/قايمة مفتوحة الأول، وبعدين يرجع خطوة واحدة، ومن الرئيسية يطلب ضغطة تانية للخروج
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 if (customView != null) {
                     chrome.onHideCustomView();
-                } else if (web.canGoBack()) {
-                    web.goBack();
-                } else {
-                    setEnabled(false);
-                    getOnBackPressedDispatcher().onBackPressed();
+                    return;
                 }
+                web.evaluateJavascript(
+                        "(function(){try{return window.appBack?window.appBack():false}catch(e){return false}})()",
+                        r -> {
+                            if ("true".equals(r)) return;          // الموقع قفل نافذة أو قايمة
+                            if (web.canGoBack()) {
+                                web.goBack();                        // خطوة واحدة لورا
+                            } else if (!isHome(curUrl)) {
+                                web.loadUrl(startUrl + "home");      // مفيش تاريخ: ارجع للرئيسية بدل الخروج
+                            } else {
+                                long now = System.currentTimeMillis();
+                                if (now - lastBack < 2000) {
+                                    finish();
+                                } else {
+                                    lastBack = now;
+                                    Toast.makeText(MainActivity.this, R.string.exit_hint, Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
             }
         });
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         else web.loadUrl(startUrl);
+    }
+
+    private boolean isHome(String url) {
+        try {
+            String p = Uri.parse(url).getPath();
+            if (p == null) return true;
+            String last = p.endsWith("/") ? "" : p.substring(p.lastIndexOf('/') + 1);
+            return last.isEmpty() || last.equals("home") || last.equals("index") || last.equals("index.html") || last.equals("home.html");
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private boolean isOwn(String url) {

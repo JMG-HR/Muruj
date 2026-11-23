@@ -1,7 +1,7 @@
 // صفحة: brand — الهوية البصرية للشركة (اسم، لوجو، ألوان، خلفية، علامة مائية، تواصل)
 const PRE=[['ذهبي','Gold','#E8B553','#f6d98f','#000000','#f2efe8','#9a968c'],['أزرق','Blue','#4F8CFF','#9CC2FF','#04070f','#eaf0fb','#8f9bb3'],['زمردي','Emerald','#2FBF8F','#8FE8C8','#020a07','#e9f7f1','#8fa89d'],['بنفسجي','Purple','#A06BFF','#D2B8FF','#07050d','#f0eafb','#a094b8'],['أحمر','Ruby','#E0525C','#FF9AA0','#0d0506','#f8ecec','#b79a9c'],['نحاسي','Copper','#F08A4B','#FFC49B','#0b0603','#f8efe8','#b09c8c'],['فضي','Silver','#C7CCD6','#F1F3F7','#050506','#f1f2f4','#9a9ca3']];
 const BCK=[['g','bG1'],['g2','bG2'],['bg','bBg'],['t','bTx'],['m','bMu']];
-function pBrand(){if(!isA())return go('home');const T=theme(),hs0=CF.hero&&(()=>{try{return localStorage['hero_'+CF.hero]}catch(e){}})()||'assets/home-bg.jpg';
+function pBrand(){if(!isH())return go('home');const T=theme(),hs0=CF.hero&&(()=>{try{return localStorage['hero_'+CF.hero]}catch(e){}})()||'assets/home-bg.jpg';
  A.innerHTML=`<div class=pg><h2 class=rv>${t('brand')}</h2>
  <div class="gl cd2 rv" style="margin-top:1rem"><h3 style="margin-bottom:.6rem">${t('bIdent')}</h3><label>${t('bName')}</label><input id=bn value="${esc(CF.name||'')}" autocomplete=off placeholder="JMG"><label>${t('bNameEn')}</label><input id=bne dir=ltr value="${esc(CF.nameEn||'')}" autocomplete=off><small class=mu>${t('bNameH')}</small><label style="margin-top:.8rem">${t('bTag')}</label><input id=bt value="${esc(CF.tag||'')}" autocomplete=off></div>
  <div class="gl cd2 rv" style="margin-top:1rem"><h3 style="margin-bottom:.6rem">${t('logoI')}</h3><small class=mu>${t('bLogoH')}</small><input id=bl type=file accept="image/*" style="margin-top:.5rem"><img class=lg id=blp src="${logo()}" style="height:52px;margin-top:.5rem" alt=""></div>
@@ -29,4 +29,4 @@ function pBrand(){if(!isA())return go('home');const T=theme(),hs0=CF.hero&&(()=>
   const bad=rs.find(r=>r&&r.err);if(bad)throw new Error(bad.err);
   ch.forEach(([k,v])=>{CF[k]=(k=='wmo'||k=='wms')?+v:v});localStorage.cf=JSON.stringify(CF);conf();topbar();pBrand();toast(t('bSaved'))}catch(e){toast(t('err')+' '+(e&&e.message||''))}finally{const b=$('#bs');if(b)b.disabled=false}};
  $('#br').onclick=async()=>{if(!confirm(t('sure')))return;for(const k of['logo','wm','wmo','wms','name','nameEn','tag','theme','hero'])if(CF[k])await api('setConf',{k,v:''});['logo','wm','wmo','wms','name','nameEn','tag','theme','hero'].forEach(k=>delete CF[k]);localStorage.cf=JSON.stringify(CF);conf();topbar();pBrand()}}
-bootPage(pBrand,'brand',true);
+bootPage(pBrand,'brand','hook');
