@@ -229,3 +229,4 @@ html.nosc{overflow:hidden}
 .pt .px{position:absolute;top:-6px;inset-inline-end:-6px;width:22px;height:22px;padding:0;margin:0;border-radius:50%;background:#000c;border:1px solid #ffffff55;color:#fff;font-size:.7rem;display:flex;align-items:center;justify-content:center}
 .pt .pn{position:absolute;bottom:3px;inset-inline-start:3px;font-style:normal;font-size:.62rem;font-weight:700;padding:.05rem .4rem;border-radius:8px;background:var(--g);color:var(--on)}
 .yt.wait::after{content:attr(data-ld);position:absolute;bottom:12px;inset-inline:0;text-align:center;color:#ddd;font-size:.8rem;pointer-events:none;z-index:3}
+.yterr{overflow:auto}.yterr .dx{display:block;margin-top:.4rem;padding:.5rem .7rem;border-radius:10px;background:#ffffff10;color:#cfcbc2;font-size:.75rem;line-height:1.6;max-width:92%}
